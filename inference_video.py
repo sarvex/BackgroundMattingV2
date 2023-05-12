@@ -106,7 +106,11 @@ class ImageSequenceWriter:
         for i in range(frames.shape[0]):
             frame = frames[i]
             frame = to_pil_image(frame)
-            frame.save(os.path.join(self.path, str(index + i).zfill(5) + '.' + self.extension))
+            frame.save(
+                os.path.join(
+                    self.path, f'{str(index + i).zfill(5)}.{self.extension}'
+                )
+            )
 
 
 # --------------- Main ---------------
@@ -175,7 +179,7 @@ else:
         err_writer = ImageSequenceWriter(os.path.join(args.output_dir, 'err'), 'jpg')
     if 'ref' in args.output_types:
         ref_writer = ImageSequenceWriter(os.path.join(args.output_dir, 'ref'), 'jpg')
-    
+
 
 # Conversion loop
 with torch.no_grad():
@@ -185,10 +189,10 @@ with torch.no_grad():
             tgt_bgr = tgt_bgr.to(device, non_blocking=True)
         else:
             src, bgr = input_batch
-            tgt_bgr = torch.tensor([120/255, 255/255, 155/255], device=device).view(1, 3, 1, 1)
+            tgt_bgr = torch.tensor([120/255, 1, 155/255], device=device).view(1, 3, 1, 1)
         src = src.to(device, non_blocking=True)
         bgr = bgr.to(device, non_blocking=True)
-        
+
         if args.model_type == 'mattingbase':
             pha, fgr, err, _ = model(src, bgr)
         elif args.model_type == 'mattingrefine':
@@ -200,11 +204,10 @@ with torch.no_grad():
             if args.output_format == 'video':
                 # Output composite with green background
                 com = fgr * pha + tgt_bgr * (1 - pha)
-                com_writer.add_batch(com)
             else:
                 # Output composite as rgba png images
                 com = torch.cat([fgr * pha.ne(0), pha], dim=1)
-                com_writer.add_batch(com)
+            com_writer.add_batch(com)
         if 'pha' in args.output_types:
             pha_writer.add_batch(pha)
         if 'fgr' in args.output_types:

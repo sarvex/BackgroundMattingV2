@@ -54,11 +54,11 @@ class Refiner(nn.Module):
                  patch_crop_method: str = 'unfold',
                  patch_replace_method: str = 'scatter_nd'):
         super().__init__()
-        assert mode in ['full', 'sampling', 'thresholding']
-        assert kernel_size in [1, 3]
-        assert patch_crop_method in ['unfold', 'roi_align', 'gather']
-        assert patch_replace_method in ['scatter_nd', 'scatter_element']
-        
+        assert mode in {'full', 'sampling', 'thresholding'}
+        assert kernel_size in {1, 3}
+        assert patch_crop_method in {'unfold', 'roi_align', 'gather'}
+        assert patch_replace_method in {'scatter_nd', 'scatter_element'}
+
         self.mode = mode
         self.sample_pixels = sample_pixels
         self.threshold = threshold
@@ -278,5 +278,6 @@ class Refiner(nn.Module):
         o = torch.arange(O)
         idx_pat = (c * H * W).view(C, 1, 1).expand([C, O, O]) + (o * W).view(1, O, 1).expand([C, O, O]) + o.view(1, 1, O).expand([C, O, O])
         idx_loc = b * W * H + y * W * S + x * S
-        idx_pix = idx_loc.view(-1, 1, 1, 1).expand([n, C, O, O]) + idx_pat.view(1, C, O, O).expand([n, C, O, O])
-        return idx_pix
+        return idx_loc.view(-1, 1, 1, 1).expand([n, C, O, O]) + idx_pat.view(
+            1, C, O, O
+        ).expand([n, C, O, O])

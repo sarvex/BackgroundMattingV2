@@ -42,6 +42,7 @@ Compatibility:
 """
 
 
+
 import argparse
 import torch
 
@@ -105,7 +106,7 @@ bgr = torch.randn(2, 3, 1080, 1920).to(precision).to(args.device)
 if args.model_type == 'mattingbase':
     input_names=['src', 'bgr']
     output_names = ['pha', 'fgr', 'err', 'hid']
-if args.model_type == 'mattingrefine':
+elif args.model_type == 'mattingrefine':
     input_names=['src', 'bgr']
     output_names = ['pha', 'fgr', 'pha_sm', 'fgr_sm', 'err_sm', 'ref_sm']
 
@@ -126,29 +127,29 @@ print(f'ONNX model saved at: {args.output}')
 if args.validate:
     import onnxruntime
     import numpy as np
-    
-    print(f'Validating ONNX model.')
-    
+
+    print('Validating ONNX model.')
+
     # Test with different inputs.
     src = torch.randn(1, 3, 720, 1280).to(precision).to(args.device)
     bgr = torch.randn(1, 3, 720, 1280).to(precision).to(args.device)
-    
+
     with torch.no_grad():
         out_torch = model(src, bgr)
-    
+
     sess = onnxruntime.InferenceSession(args.output)
     out_onnx = sess.run(None, {
         'src': src.cpu().numpy(),
         'bgr': bgr.cpu().numpy()
     })
-    
+
     e_max = 0
     for a, b, name in zip(out_torch, out_onnx, output_names):
         b = torch.as_tensor(b)
         e = torch.abs(a.cpu() - b).max()
         e_max = max(e_max, e.item())
         print(f'"{name}" output differs by maximum of {e}')
-        
+
     if e_max < 0.005:
         print('Validation passed.')
     else:

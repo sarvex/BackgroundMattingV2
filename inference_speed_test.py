@@ -35,6 +35,7 @@ Run inference on provided image input for dynamic computation setting.
     
 """
 
+
 import argparse
 import torch
 from torchvision.transforms.functional import to_tensor
@@ -94,12 +95,8 @@ if args.model_type == 'mattingrefine':
 
 if args.model_checkpoint:
     model.load_state_dict(torch.load(args.model_checkpoint), strict=False)
-    
-if args.precision == 'float32':
-    precision = torch.float32
-else:
-    precision = torch.float16
-    
+
+precision = torch.float32 if args.precision == 'float32' else torch.float16
 if args.backend == 'torchscript':
     model = torch.jit.script(model)
 
@@ -112,7 +109,7 @@ if not args.image_src:
 else:
     src = to_tensor(Image.open(args.image_src)).unsqueeze(0).repeat(args.batch_size, 1, 1, 1).to(device=device, dtype=precision)
     bgr = to_tensor(Image.open(args.image_bgr)).unsqueeze(0).repeat(args.batch_size, 1, 1, 1).to(device=device, dtype=precision)
-    
+
 # Loop
 with torch.no_grad():
     for _ in tqdm(range(1000)):
